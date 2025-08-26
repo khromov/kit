@@ -142,7 +142,7 @@ export function write_all_types(config, manifest_data) {
 export function write_types(config, manifest_data, file) {
 	if (!ts) return;
 
-	if (!path.basename(file).startsWith('+')) {
+	if (!path.basename(file).startsWith(config.kit.files.routeFilePrefix)) {
 		// Not a route file
 		return;
 	}

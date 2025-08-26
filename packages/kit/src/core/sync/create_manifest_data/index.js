@@ -229,7 +229,7 @@ function create_routes_and_nodes(cwd, config, fallback) {
 				const ext = valid_extensions.find((ext) => file.name.endsWith(ext));
 				if (!ext) continue;
 
-				if (!file.name.startsWith('+')) {
+				if (!file.name.startsWith(config.kit.files.routeFilePrefix)) {
 					const name = file.name.slice(0, -ext.length);
 					// check if it is a valid route filename but missing the + prefix
 					const typo =
@@ -242,7 +242,7 @@ function create_routes_and_nodes(cwd, config, fallback) {
 							colors
 								.bold()
 								.yellow(
-									`Missing route file prefix. Did you mean +${file.name}?` +
+									`Missing route file prefix. Did you mean ${config.kit.files.routeFilePrefix}${file.name}?` +
 										` at ${path.join(dir, file.name)}`
 								)
 						);
@@ -256,9 +256,10 @@ function create_routes_and_nodes(cwd, config, fallback) {
 					const ext = valid_extensions.find((ext) => name.endsWith(ext));
 					if (ext) name = name.slice(0, -ext.length);
 
+					const escapedPrefix = config.kit.files.routeFilePrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 					const valid =
-						/^\+(?:(page(?:@(.*))?)|(layout(?:@(.*))?)|(error))$/.test(name) ||
-						/^\+(?:(server)|(page(?:(@[a-zA-Z0-9_-]*))?(\.server)?)|(layout(?:(@[a-zA-Z0-9_-]*))?(\.server)?))$/.test(
+						new RegExp(`^${escapedPrefix}(?:(page(?:@(.*))?)|(layout(?:@(.*))?)|(error))$`).test(name) ||
+						new RegExp(`^${escapedPrefix}(?:(server)|(page(?:(@[a-zA-Z0-9_-]*))?(\.server)?)|(layout(?:(@[a-zA-Z0-9_-]*))?(\.server)?))$`).test(
 							name
 						);
 
@@ -271,7 +272,8 @@ function create_routes_and_nodes(cwd, config, fallback) {
 					project_relative,
 					file.name,
 					config.extensions,
-					config.kit.moduleExtensions
+					config.kit.moduleExtensions,
+					config.kit.files.routeFilePrefix
 				);
 
 				if (config.kit.router.type === 'hash' && item.kind === 'server') {
@@ -500,16 +502,18 @@ function create_remotes(config, cwd) {
  * @param {string} file
  * @param {string[]} component_extensions
  * @param {string[]} module_extensions
+ * @param {string} routeFilePrefix
  * @returns {import('./types.js').RouteFile}
  */
-function analyze(project_relative, file, component_extensions, module_extensions) {
+function analyze(project_relative, file, component_extensions, module_extensions, routeFilePrefix) {
 	const component_extension = component_extensions.find((ext) => file.endsWith(ext));
 	if (component_extension) {
 		const name = file.slice(0, -component_extension.length);
-		const pattern = /^\+(?:(page(?:@(.*))?)|(layout(?:@(.*))?)|(error))$/;
+		const escapedPrefix = routeFilePrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		const pattern = new RegExp(`^${escapedPrefix}(?:(page(?:@(.*))?)|(layout(?:@(.*))?)|(error))$`);
 		const match = pattern.exec(name);
 		if (!match) {
-			throw new Error(`Files prefixed with + are reserved (saw ${project_relative})`);
+			throw new Error(`Files prefixed with ${routeFilePrefix} are reserved (saw ${project_relative})`);
 		}
 
 		return {
@@ -524,11 +528,11 @@ function analyze(project_relative, file, component_extensions, module_extensions
 	const module_extension = module_extensions.find((ext) => file.endsWith(ext));
 	if (module_extension) {
 		const name = file.slice(0, -module_extension.length);
-		const pattern =
-			/^\+(?:(server)|(page(?:(@[a-zA-Z0-9_-]*))?(\.server)?)|(layout(?:(@[a-zA-Z0-9_-]*))?(\.server)?))$/;
+		const escapedPrefix = routeFilePrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		const pattern = new RegExp(`^${escapedPrefix}(?:(server)|(page(?:(@[a-zA-Z0-9_-]*))?(\.server)?)|(layout(?:(@[a-zA-Z0-9_-]*))?(\.server)?))$`);
 		const match = pattern.exec(name);
 		if (!match) {
-			throw new Error(`Files prefixed with + are reserved (saw ${project_relative})`);
+			throw new Error(`Files prefixed with ${routeFilePrefix} are reserved (saw ${project_relative})`);
 		} else if (match[3] || match[6]) {
 			throw new Error(
 				// prettier-ignore
@@ -545,7 +549,7 @@ function analyze(project_relative, file, component_extensions, module_extensions
 		};
 	}
 
-	throw new Error(`Files and directories prefixed with + are reserved (saw ${project_relative})`);
+	throw new Error(`Files and directories prefixed with ${routeFilePrefix} are reserved (saw ${project_relative})`);
 }
 
 /**

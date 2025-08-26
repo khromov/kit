@@ -88,13 +88,17 @@ const options_regex = /(export\s+const\s+(prerender|csr|ssr|trailingSlash))\s*=/
 /** @type {Set<string>} */
 const warned = new Set();
 
-/** @type {import('svelte/compiler').PreprocessorGroup} */
-const warning_preprocessor = {
-	script: ({ content, filename }) => {
-		if (!filename) return;
+/**
+ * @param {string} routeFilePrefix
+ * @returns {import('svelte/compiler').PreprocessorGroup}
+ */
+function create_warning_preprocessor(routeFilePrefix) {
+	return {
+		script: ({ content, filename }) => {
+			if (!filename) return;
 
-		const basename = path.basename(filename);
-		if (basename.startsWith('+page.') || basename.startsWith('+layout.')) {
+			const basename = path.basename(filename);
+			if (basename.startsWith(`${routeFilePrefix}page.`) || basename.startsWith(`${routeFilePrefix}layout.`)) {
 			const match = content.match(options_regex);
 			if (match && match.index !== undefined && !should_ignore(content, match.index)) {
 				const fixed = basename.replace('.svelte', '(.server).js/ts');
@@ -117,7 +121,7 @@ const warning_preprocessor = {
 		const has_children =
 			content.includes('<slot') || (isSvelte5Plus() && content.includes('{@render'));
 
-		if (basename.startsWith('+layout.') && !has_children) {
+		if (basename.startsWith(`${routeFilePrefix}layout.`) && !has_children) {
 			const message =
 				`\n${colors.bold().red(path.relative('.', filename))}\n` +
 				`\`<slot />\`${isSvelte5Plus() ? ' or `{@render ...}` tag' : ''}` +
@@ -129,7 +133,8 @@ const warning_preprocessor = {
 			}
 		}
 	}
-};
+	};
+}
 
 /**
  * Returns the SvelteKit Vite plugins.
@@ -137,6 +142,7 @@ const warning_preprocessor = {
  */
 export async function sveltekit() {
 	const svelte_config = await load_config();
+	const warning_preprocessor = create_warning_preprocessor(svelte_config.kit.files.routeFilePrefix);
 
 	/** @type {import('@sveltejs/vite-plugin-svelte').Options['preprocess']} */
 	let preprocess = svelte_config.preprocess;

@@ -562,6 +562,11 @@ export interface KitConfig {
 		 */
 		routes?: string;
 		/**
+		 * the prefix used for route files like +page.svelte, +layout.svelte, etc.
+		 * @default "+"
+		 */
+		routeFilePrefix?: string;
+		/**
 		 * the location of your service worker's entry point (see [Service workers](https://svelte.dev/docs/kit/service-workers))
 		 * @deprecated
 		 * @default "src/service-worker"
