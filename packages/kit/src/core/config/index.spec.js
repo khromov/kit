@@ -83,7 +83,6 @@ const get_defaults = (prefix = '') => ({
 			remoteFunctions: false
 		},
 		files: {
-			src: join(prefix, 'src'),
 			assets: join(prefix, 'static'),
 			hooks: {
 				client: join(prefix, 'src/hooks.client'),
@@ -93,6 +92,7 @@ const get_defaults = (prefix = '') => ({
 			lib: join(prefix, 'src/lib'),
 			params: join(prefix, 'src/params'),
 			routes: join(prefix, 'src/routes'),
+			routeFilePrefix: '+',
 			serviceWorker: join(prefix, 'src/service-worker'),
 			appTemplate: join(prefix, 'src/app.html'),
 			errorTemplate: join(prefix, 'src/error.html')
@@ -106,7 +106,8 @@ const get_defaults = (prefix = '') => ({
 			resolution: 'client'
 		},
 		serviceWorker: {
-			register: true
+			register: true,
+			options: undefined
 		},
 		typescript: {},
 		paths: {

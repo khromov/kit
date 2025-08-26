@@ -820,3 +820,42 @@ test('errors with both ts and js handlers for the same route', () => {
 		/^Multiple endpoint files found in samples\/conflicting-ts-js-handlers-server\/ : \+server\.js and \+server\.ts/
 	);
 });
+
+test('custom routeFilePrefix configuration', () => {
+	const { nodes, routes } = create('samples/custom-prefix', {
+		kit: {
+			files: {
+				routeFilePrefix: '~'
+			}
+		}
+	});
+
+	// Should find nodes with custom prefix
+	expect(nodes.map(simplify_node)).toEqual([
+		{ component: 'samples/custom-prefix/~layout.svelte' },
+		{ component: 'samples/custom-prefix/~error.svelte' },
+		{ component: 'samples/custom-prefix/~page.svelte' },
+		{ component: 'samples/custom-prefix/about/~page.svelte' }
+	]);
+
+	// Should create routes for files with custom prefix
+	expect(routes.map(simplify_route)).toEqual([
+		{
+			id: '/',
+			pattern: '/^/$/',
+			page: { layouts: [0], errors: [1], leaf: 2 }
+		},
+		{
+			id: '/about',
+			pattern: '/^/about/?$/',
+			page: { layouts: [0], errors: [1], leaf: 3 }
+		},
+		{
+			id: '/api',
+			pattern: '/^/api/?$/',
+			endpoint: {
+				file: 'samples/custom-prefix/api/~server.js'
+			}
+		}
+	]);
+});
