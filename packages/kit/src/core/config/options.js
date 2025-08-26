@@ -1,4 +1,3 @@
-import { join } from 'node:path';
 import process from 'node:process';
 import colors from 'kleur';
 
@@ -137,19 +136,19 @@ const options = object(
 			}),
 
 			files: object({
-				assets: string('static'),
+				src: deprecate(string('src')),
+				assets: deprecate(string('static')),
 				hooks: object({
-					client: string(join('src', 'hooks.client')),
-					server: string(join('src', 'hooks.server')),
-					universal: string(join('src', 'hooks'))
+					client: deprecate(string(null)),
+					server: deprecate(string(null)),
+					universal: deprecate(string(null))
 				}),
-				lib: string(join('src', 'lib')),
-				params: string(join('src', 'params')),
-				routes: string(join('src', 'routes')),
-				routeFilePrefix: string('+'),
-				serviceWorker: string(join('src', 'service-worker')),
-				appTemplate: string(join('src', 'app.html')),
-				errorTemplate: string(join('src', 'error.html'))
+				lib: deprecate(string(null)),
+				params: deprecate(string(null)),
+				routes: deprecate(string(null)),
+				serviceWorker: deprecate(string(null)),
+				appTemplate: deprecate(string(null)),
+				errorTemplate: deprecate(string(null))
 			}),
 
 			inlineStyleThreshold: number(0),
