@@ -83,6 +83,7 @@ const get_defaults = (prefix = '') => ({
 			remoteFunctions: false
 		},
 		files: {
+			src: join(prefix, 'src'),
 			assets: join(prefix, 'static'),
 			hooks: {
 				client: join(prefix, 'src/hooks.client'),
