@@ -1,4 +1,3 @@
-import { join } from 'node:path';
 import process from 'node:process';
 import colors from 'kleur';
 
