@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import process from 'node:process';
 import colors from 'kleur';
 
@@ -146,6 +147,7 @@ const options = object(
 				lib: deprecate(string(null)),
 				params: deprecate(string(null)),
 				routes: deprecate(string(null)),
+				routeFilePrefix: string('+'),
 				serviceWorker: deprecate(string(null)),
 				appTemplate: deprecate(string(null)),
 				errorTemplate: deprecate(string(null))
