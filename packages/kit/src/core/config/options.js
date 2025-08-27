@@ -137,6 +137,7 @@ const options = object(
 			}),
 
 			files: object({
+				src: string('src'),
 				assets: string('static'),
 				hooks: object({
 					client: string(join('src', 'hooks.client')),
