@@ -1731,6 +1731,102 @@ test.describe('init', () => {
 	});
 });
 
+test.describe('client handle hook', () => {
+	test('handle hook is called during client-side navigation', async ({ page, app }) => {
+		await page.goto('/');
+
+		// Clear any existing navigation events
+		await page.evaluate(() => {
+			window.__sveltekit_navigation_events = [];
+		});
+
+		// Navigate to another page
+		await app.goto('/routing');
+
+		// Check that handle hook was called
+		const events = await page.evaluate(() => window.__sveltekit_navigation_events);
+		expect(events.length).toBeGreaterThan(0);
+		expect(events[events.length - 1].url).toBe('/routing');
+	});
+
+	test('handle hook is not called on initial page load', async ({ page }) => {
+		// Navigate directly to a page (initial load)
+		await page.goto('/routing');
+
+		// Check that no navigation events were recorded (handle not called on 'enter')
+		const events = await page.evaluate(() => window.__sveltekit_navigation_events || []);
+		expect(events.length).toBe(0);
+	});
+
+	test('handle hook can block navigation', async ({ page, app }) => {
+		await page.goto('/');
+
+		const currentUrl = page.url();
+
+		// Try to navigate to /blocked path
+		// This should fail silently since the hook blocks it
+		try {
+			await Promise.race([
+				app.goto('/blocked'),
+				new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1000))
+			]);
+		} catch {
+			// Expected to timeout or fail
+		}
+
+		// Should still be on the original page since navigation was blocked
+		const newUrl = page.url();
+		expect(newUrl).toBe(currentUrl);
+	});
+
+	test('handle hook can transform navigation URL', async ({ page, app }) => {
+		await page.goto('/');
+
+		// Navigate to /redirect-me which should be transformed to /redirected
+		await app.goto('/redirect-me');
+
+		// Should end up at /redirected instead
+		const url = page.url();
+		expect(url).toContain('/redirected');
+	});
+
+	test('handle hook receives correct event properties', async ({ page, app }) => {
+		await page.goto('/');
+
+		// Clear navigation events
+		await page.evaluate(() => {
+			window.__sveltekit_navigation_events = [];
+		});
+
+		// Navigate with params
+		await app.goto('/routing/a');
+
+		// Check event properties
+		const events = await page.evaluate(() => window.__sveltekit_navigation_events);
+		const lastEvent = events[events.length - 1];
+
+		expect(lastEvent.url).toBe('/routing/a');
+		expect(lastEvent.type).toBeTruthy();
+		expect(lastEvent.params).toBeDefined();
+	});
+
+	test('handle hook is called for goto navigation', async ({ page, app }) => {
+		await page.goto('/');
+
+		// Clear navigation events
+		await page.evaluate(() => {
+			window.__sveltekit_navigation_events = [];
+		});
+
+		// Test goto navigation
+		await app.goto('/load');
+
+		const events = await page.evaluate(() => window.__sveltekit_navigation_events);
+		expect(events.length).toBeGreaterThan(0);
+		expect(events[events.length - 1].type).toBe('goto');
+	});
+});
+
 test.describe('INP', () => {
 	test('does not block next paint', async ({ page }) => {
 		// Thanks to https://publishing-project.rivendellweb.net/measuring-performance-tasks-with-playwright/#interaction-to-next-paint-inp

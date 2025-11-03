@@ -13,6 +13,7 @@ import {
 	HandleFetch,
 	Actions,
 	HandleClientError,
+	HandleClientNavigate,
 	Reroute,
 	RequestEvent,
 	SSRManifest,
@@ -159,6 +160,7 @@ export interface ServerHooks {
 }
 
 export interface ClientHooks {
+	handle: HandleClientNavigate;
 	handleError: HandleClientError;
 	reroute: Reroute;
 	transport: Transport;

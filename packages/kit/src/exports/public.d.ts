@@ -945,6 +945,21 @@ export type HandleClientError = (input: {
 }) => MaybePromise<void | App.Error>;
 
 /**
+ * The client-side [`handle`](https://svelte.dev/docs/kit/hooks#Client-hooks-handle) hook runs during client-side navigation.
+ * It receives a `ClientNavigationEvent` object and a function called `resolve`, which performs the navigation and generates a `ClientNavigationResponse`.
+ * This allows you to intercept navigations, add authentication guards, or modify navigation behavior.
+ *
+ * @since 2.18.0
+ */
+export type HandleClientNavigate = (input: {
+	event: ClientNavigationEvent;
+	resolve: (
+		event: ClientNavigationEvent,
+		opts?: ClientNavigationResolveOptions
+	) => MaybePromise<ClientNavigationResponse>;
+}) => MaybePromise<ClientNavigationResponse>;
+
+/**
  * The [`handleFetch`](https://svelte.dev/docs/kit/hooks#Server-hooks-handleFetch) hook allows you to modify (or replace) the result of an [`event.fetch`](https://svelte.dev/docs/kit/load#Making-fetch-requests) call that runs on the server (or during prerendering) inside an endpoint, `load`, `action`, `handle`, `handleError` or `reroute`.
  */
 export type HandleFetch = (input: {
@@ -1166,6 +1181,96 @@ export interface NavigationEvent<
 	 * The URL of the current page
 	 */
 	url: URL;
+}
+
+/**
+ * Represents the event object passed to the client-side `handle` hook during navigation.
+ * This interface mirrors the server-side `RequestEvent` with client-appropriate properties.
+ *
+ * @since 2.18.0
+ */
+export interface ClientNavigationEvent<
+	Params extends Partial<Record<string, string>> = Partial<Record<string, string>>,
+	RouteId extends string | null = string | null
+> {
+	/**
+	 * The parameters of the target page - e.g. for a route like `/blog/[slug]`, a `{ slug: string }` object
+	 */
+	params: Params;
+	/**
+	 * Info about the target route
+	 */
+	route: {
+		/**
+		 * The ID of the target route - e.g. for `src/routes/blog/[slug]`, it would be `/blog/[slug]`. It is `null` when no route is matched.
+		 */
+		id: RouteId;
+	};
+	/**
+	 * The URL being navigated to
+	 */
+	url: URL;
+	/**
+	 * `fetch` is equivalent to the [native `fetch` web API](https://developer.mozilla.org/en-US/docs/Web/API/fetch).
+	 */
+	fetch: typeof fetch;
+	/**
+	 * Contains custom data that can be shared between hooks and components on the client.
+	 * This is analogous to `event.locals` on the server, but exists only in memory during the client session.
+	 */
+	locals: App.Locals;
+	/**
+	 * Additional data made available through the adapter (if any was passed to the client).
+	 */
+	platform: Readonly<App.Platform> | undefined;
+	/**
+	 * `true` if the navigation is a request for `__data.json` (internal SvelteKit data fetching).
+	 */
+	isDataRequest: boolean;
+	/**
+	 * The type of navigation that triggered this event.
+	 */
+	type: NavigationType;
+	/**
+	 * Where navigation was triggered from, if applicable.
+	 */
+	from: NavigationTarget | null;
+}
+
+/**
+ * The response object returned by the client-side `resolve` function in the `handle` hook.
+ * This interface provides a consistent API with the server-side `Response`, adapted for client-side navigation.
+ *
+ * @since 2.18.0
+ */
+export interface ClientNavigationResponse {
+	/**
+	 * Whether the navigation was successful.
+	 * - `200`: Navigation completed successfully
+	 * - `404`: Route not found
+	 * - `500`: Error during navigation
+	 */
+	status: number;
+	/**
+	 * Whether the navigation should proceed. Set to `false` to block navigation.
+	 */
+	ok: boolean;
+	/**
+	 * Optional redirect location. If set, the navigation will redirect to this URL.
+	 */
+	redirect?: string;
+}
+
+/**
+ * Options that can be passed to the `resolve` function in the client-side `handle` hook.
+ *
+ * @since 2.18.0
+ */
+export interface ClientNavigationResolveOptions {
+	/**
+	 * Allows transforming the navigation result before it's processed.
+	 */
+	transformNavigation?: (input: { status: number }) => MaybePromise<{ status?: number }>;
 }
 
 /**

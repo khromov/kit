@@ -162,6 +162,9 @@ export function write_client_manifest(kit, manifest_data, output, metadata) {
 			export const dictionary = ${dictionary};
 
 			export const hooks = {
+				handle: ${
+					client_hooks_file ? 'client_hooks.handle || ' : ''
+				}(({ event, resolve }) => resolve(event)),
 				handleError: ${
 					client_hooks_file ? 'client_hooks.handleError || ' : ''
 				}(({ error }) => { console.error(error) }),

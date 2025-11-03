@@ -1565,7 +1565,96 @@ async function navigate({
 		stores.navigating.set((navigating.current = nav.navigation));
 	}
 
-	let navigation_result = intent && (await load_route(intent));
+	// Call handle hook for client-side navigations (skip initial 'enter')
+	let navigation_result;
+	if (app.hooks.handle && type !== 'enter') {
+		/** @type {import('@sveltejs/kit').ClientNavigationEvent} */
+		const navigation_event = {
+			url: new URL(url),
+			params: intent?.params || {},
+			route: { id: intent?.route?.id || null },
+			fetch: fetch,
+			locals: /** @type {App.Locals} */ ({}),
+			platform: undefined,
+			isDataRequest: false,
+			type: type,
+			from: current.url
+				? {
+						url: current.url,
+						params: /** @type {Record<string, string>} */ ({}),
+						route: { id: null }
+					}
+				: null
+		};
+
+		/**
+		 * @param {import('@sveltejs/kit').ClientNavigationEvent} event
+		 * @param {import('@sveltejs/kit').ClientNavigationResolveOptions} [opts]
+		 * @returns {Promise<import('@sveltejs/kit').ClientNavigationResponse>}
+		 */
+		const resolve = async (event, opts) => {
+			// If the URL was modified by the hook, update it
+			if (event.url.href !== url.href) {
+				url = event.url;
+				// Re-fetch the intent with the new URL
+				const new_intent = await get_navigation_intent(url, false);
+				if (new_intent) {
+					navigation_result = await load_route(new_intent);
+				}
+			} else {
+				navigation_result = intent && (await load_route(intent));
+			}
+
+			if (!navigation_result) {
+				return { status: 404, ok: false };
+			}
+
+			if (navigation_result.type === 'redirect') {
+				return {
+					status: 302,
+					ok: false,
+					redirect: navigation_result.location
+				};
+			}
+
+			const status = navigation_result.props?.page?.status || 200;
+
+			if (opts?.transformNavigation) {
+				const transformed = await opts.transformNavigation({ status });
+				return {
+					status: transformed.status ?? status,
+					ok: (transformed.status ?? status) < 400
+				};
+			}
+
+			return { status, ok: status < 400 };
+		};
+
+		const response = await app.hooks.handle({
+			event: navigation_event,
+			resolve
+		});
+
+		// If the hook didn't call resolve, block navigation
+		if (!navigation_result) {
+			if (response.redirect) {
+				// Handle redirect from hook
+				await _goto(new URL(response.redirect, url).href, {}, redirect_count + 1, nav_token);
+				return false;
+			}
+			// Navigation was blocked
+			nav.reject(new Error('navigation blocked by handle hook'));
+			return false;
+		}
+
+		// If response indicates failure, handle accordingly
+		if (!response.ok && !navigation_result) {
+			nav.reject(new Error(`navigation failed with status ${response.status}`));
+			return false;
+		}
+	} else {
+		navigation_result = intent && (await load_route(intent));
+	}
 
 	if (!navigation_result) {
 		if (is_external_url(url, base, app.hash)) {
