@@ -516,6 +516,54 @@ async function _preload_data(intent) {
 	if (intent.id !== load_cache?.id) {
 		discard_load_cache();
 
+		// Check handle hook for preload permission
+		if (app.hooks.handle) {
+			/** @type {import('@sveltejs/kit').ClientNavigationEvent} */
+			const navigation_event = {
+				url: new URL(intent.url),
+				params: intent.params || {},
+				route: { id: intent.route?.id || null },
+				fetch: fetch,
+				locals: /** @type {App.Locals} */ ({}),
+				platform: undefined,
+				isDataRequest: false,
+				type: 'link',
+				from: current.url
+					? {
+							url: current.url,
+							params: /** @type {Record<string, string>} */ ({}),
+							route: { id: null }
+						}
+					: null,
+				isPreload: true
+			};
+
+			/**
+			 * @param {import('@sveltejs/kit').ClientNavigationEvent} event
+			 * @param {import('@sveltejs/kit').ClientNavigationResolveOptions} [opts]
+			 * @returns {Promise<import('@sveltejs/kit').ClientNavigationResponse>}
+			 */
+			const resolve = async (event, opts) => {
+				// For preloads, just return success if resolve is called
+				return { status: 200, ok: true };
+			};
+
+			const response = await app.hooks.handle({
+				event: navigation_event,
+				resolve
+			});
+
+			// If hook blocks the preload, return without loading data
+			if (!response.ok) {
+				// Return a promise that resolves to a non-error state to silently abort preload
+				return Promise.resolve({
+					type: 'loaded',
+					state: { error: null, redirect: null },
+					props: null
+				});
+			}
+		}
+
 		const preload = {};
 		preload_tokens.add(preload);
 		load_cache = {
@@ -1584,7 +1632,8 @@ async function navigate({
 						params: /** @type {Record<string, string>} */ ({}),
 						route: { id: null }
 					}
-				: null
+				: null,
+			isPreload: false
 		};
 
 		/**

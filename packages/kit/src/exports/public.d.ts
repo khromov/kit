@@ -1235,6 +1235,14 @@ export interface ClientNavigationEvent<
 	 * Where navigation was triggered from, if applicable.
 	 */
 	from: NavigationTarget | null;
+	/**
+	 * `true` if this event was triggered by link preloading (e.g., hovering over a link with `data-sveltekit-preload-data`).
+	 * Allows the handle hook to distinguish between actual navigations and preload requests,
+	 * enabling it to block or allow preloading independently of navigation.
+	 *
+	 * @since 2.18.0
+	 */
+	isPreload: boolean;
 }
 
 /**
