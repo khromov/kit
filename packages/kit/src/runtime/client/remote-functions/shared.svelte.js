@@ -27,7 +27,6 @@ export async function remote_request(url, id, payload, key) {
 		}
 	};
 
-	// Call handleRemote hook if it exists
 	if (app.hooks.handleRemote) {
 		const result = await app.hooks.handleRemote({
 			id,
@@ -38,7 +37,6 @@ export async function remote_request(url, id, payload, key) {
 		});
 
 		if (result instanceof Response) {
-			// Hook returned a custom Response, use it directly
 			const response_result = /** @type {RemoteFunctionResponse} */ (await result.json());
 
 			if (response_result.type === 'redirect') {
@@ -52,7 +50,6 @@ export async function remote_request(url, id, payload, key) {
 
 			return response_result.result;
 		} else if (result) {
-			// Hook returned modified request options
 			if (result.url !== undefined) {
 				request_url = result.url;
 			}
