@@ -22,7 +22,8 @@ import {
 	ClientInit,
 	Transport,
 	HandleValidationError,
-	RemoteFormIssue
+	RemoteFormIssue,
+	HandleRemote
 } from '@sveltejs/kit';
 import {
 	HttpMethod,
@@ -163,6 +164,7 @@ export interface ClientHooks {
 	reroute: Reroute;
 	transport: Transport;
 	init?: ClientInit;
+	handleRemote?: HandleRemote;
 }
 
 export interface Env {

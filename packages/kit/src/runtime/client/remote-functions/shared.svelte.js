@@ -10,9 +10,14 @@ import { create_remote_cache_key, stringify_remote_arg } from '../../shared.js';
 /**
  *
  * @param {string} url
+ * @param {string} id - Remote function ID
+ * @param {string} payload - Stringified arguments
+ * @param {string} key - Cache key
  */
-export async function remote_request(url) {
-	const response = await fetch(url, {
+export async function remote_request(url, id, payload, key) {
+	let request_url = url;
+	/** @type {RequestInit} */
+	let init = {
 		headers: {
 			// TODO in future, when we support forking, we will likely need
 			// to grab this from context as queries will run before
@@ -20,7 +25,44 @@ export async function remote_request(url) {
 			'x-sveltekit-pathname': location.pathname,
 			'x-sveltekit-search': location.search
 		}
-	});
+	};
+
+	// Call handleRemote hook if it exists
+	if (app.hooks.handleRemote) {
+		const result = await app.hooks.handleRemote({
+			id,
+			payload,
+			key,
+			url: request_url,
+			init
+		});
+
+		if (result instanceof Response) {
+			// Hook returned a custom Response, use it directly
+			const response_result = /** @type {RemoteFunctionResponse} */ (await result.json());
+
+			if (response_result.type === 'redirect') {
+				await goto(response_result.location);
+				throw new Redirect(307, response_result.location);
+			}
+
+			if (response_result.type === 'error') {
+				throw new HttpError(response_result.status ?? 500, response_result.error);
+			}
+
+			return response_result.result;
+		} else if (result) {
+			// Hook returned modified request options
+			if (result.url !== undefined) {
+				request_url = result.url;
+			}
+			if (result.init !== undefined) {
+				init = result.init;
+			}
+		}
+	}
+
+	const response = await fetch(request_url, init);
 
 	if (!response.ok) {
 		throw new HttpError(500, 'Failed to execute remote function');

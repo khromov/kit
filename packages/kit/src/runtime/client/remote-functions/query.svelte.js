@@ -31,7 +31,7 @@ export function query(id) {
 
 			const url = `${base}/${app_dir}/remote/${id}${payload ? `?payload=${payload}` : ''}`;
 
-			const result = await remote_request(url);
+			const result = await remote_request(url, id, payload, cache_key);
 			return devalue.parse(result, app.decoders);
 		});
 	});

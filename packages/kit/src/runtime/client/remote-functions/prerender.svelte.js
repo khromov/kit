@@ -164,7 +164,7 @@ export function prerender(id) {
 				}
 			}
 
-			const encoded = await remote_request(url);
+			const encoded = await remote_request(url, id, payload, cache_key);
 
 			// For successful prerender requests, save to cache
 			if (prerender_cache) {

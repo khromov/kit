@@ -966,6 +966,51 @@ export type ServerInit = () => MaybePromise<void>;
 export type ClientInit = () => MaybePromise<void>;
 
 /**
+ * The client-side [`handleRemote`](https://svelte.dev/docs/kit/hooks#Client-hooks-handleRemote) hook allows you to modify or replace remote function requests (from `query`, `prerender`, and `cache` functions) before they are sent to the server.
+ *
+ * You can modify the request URL or options, or completely replace the request by returning a custom `Response`.
+ *
+ * ```js
+ * // src/hooks.client.js
+ * export function handleRemote({ id, payload, key, url, init }) {
+ *   // Add custom headers
+ *   return {
+ *     init: {
+ *       ...init,
+ *       headers: {
+ *         ...init.headers,
+ *         'X-Custom-Header': 'value'
+ *       }
+ *     }
+ *   };
+ *
+ *   // Or modify the URL
+ *   // return { url: url + '&debug=true' };
+ *
+ *   // Or bypass fetch with a custom response
+ *   // return new Response(JSON.stringify({ type: 'success', result: mockData }));
+ * }
+ * ```
+ * @since 2.15.0
+ */
+export type HandleRemote = (input: {
+	/** The unique identifier of the remote function being invoked (e.g., 'query:xyz') */
+	id: string;
+	/** The stringified payload/arguments passed to the remote function */
+	payload: string;
+	/** The cache key computed for this remote function call */
+	key: string;
+	/** The URL that will be fetched */
+	url: string;
+	/** The fetch request options (headers, method, etc.) */
+	init: RequestInit;
+}) => MaybePromise<
+	| { url?: string; init?: RequestInit }
+	| Response
+	| void
+>;
+
+/**
  * The [`reroute`](https://svelte.dev/docs/kit/hooks#Universal-hooks-reroute) hook allows you to modify the URL before it is used to determine which route to render.
  * @since 2.3.0
  */

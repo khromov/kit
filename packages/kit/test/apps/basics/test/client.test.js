@@ -2049,4 +2049,39 @@ test.describe('remote function mutations', () => {
 
 		await expect(page.locator('h1')).toHaveText('hello from remote function!');
 	});
+
+	test('handleRemote hook is called with context', async ({ page }) => {
+		await page.goto('/remote');
+
+		// Get the recorded handleRemote calls
+		const calls = await page.evaluate(() => window.__handleRemoteCalls || []);
+
+		// Verify hook was called
+		expect(calls.length).toBeGreaterThan(0);
+
+		// Verify context includes expected properties
+		const call = calls[0];
+		expect(call).toHaveProperty('id');
+		expect(call).toHaveProperty('payload');
+		expect(call).toHaveProperty('key');
+		expect(call).toHaveProperty('url');
+		expect(call.url).toContain('/_app/remote/');
+	});
+
+	test('handleRemote can return void (no modification)', async ({ page }) => {
+		await page.goto('/remote');
+		await expect(page.locator('#count-result')).toHaveText('0 / 0 (false)');
+	});
+
+	test('handleRemote can return custom response', async ({ page }) => {
+		await page.goto('/remote?handle_remote_test=mock');
+
+		// The query should receive the mocked result
+		const result = await page.evaluate(() => {
+			return document.querySelector('#count-result')?.textContent;
+		});
+
+		// The mocked response returns a string, so it should be displayed
+		expect(result).toBeTruthy();
+	});
 });

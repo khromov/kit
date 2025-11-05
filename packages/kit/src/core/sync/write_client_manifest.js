@@ -166,6 +166,7 @@ export function write_client_manifest(kit, manifest_data, output, metadata) {
 					client_hooks_file ? 'client_hooks.handleError || ' : ''
 				}(({ error }) => { console.error(error) }),
 				${client_hooks_file ? 'init: client_hooks.init,' : ''}
+				${client_hooks_file ? 'handleRemote: client_hooks.handleRemote,' : ''}
 				reroute: ${universal_hooks_file ? 'universal_hooks.reroute || ' : ''}(() => {}),
 				transport: ${universal_hooks_file ? 'universal_hooks.transport || ' : ''}{}
 			};
